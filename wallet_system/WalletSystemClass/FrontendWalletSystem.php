@@ -603,6 +603,118 @@ class FrontendWalletSystem extends BaseController {
     }
 
 
+    public function direct_recharge()
+    {
+        fn_add_breadcrumb(__('wallet_recharge'));
+
+        if (empty($this->auth['user_id'])) {
+            $this->response = array(CONTROLLER_STATUS_REDIRECT, "auth.login_form");
+            return;
+        }
+
+        $settings = $this->loadModel->getSettingsData();
+        $min = !empty($settings['min_recharge_amount']) ? $settings['min_recharge_amount'] : 0;
+        $max = !empty($settings['max_recharge_amount']) ? $settings['max_recharge_amount'] : 0;
+
+        $wallet_recharge = isset($_REQUEST['wallet_recharge']) ? $_REQUEST['wallet_recharge'] : array();
+        $payments = fn_get_payments(['status' => 'A']);
+
+        if ($this->requestMethod === 'POST') {
+            $amount = isset($wallet_recharge['recharge_amount']) ? trim($wallet_recharge['recharge_amount']) : '';
+            $payment_id = isset($wallet_recharge['payment_id']) ? (int) $wallet_recharge['payment_id'] : 0;
+            $paid_confirmed = !empty($wallet_recharge['paid_confirmed']) && $wallet_recharge['paid_confirmed'] === 'Y';
+
+            if ($amount === '' || !is_numeric($amount)) {
+                fn_set_notification('W', __('wallet_error'), __('please_enter_the_valid_amount'));
+                $this->response = array(CONTROLLER_STATUS_REDIRECT, "wallet_system.direct_recharge");
+                return;
+            }
+
+            $amount = fn_format_price_by_currency($amount, CART_SECONDARY_CURRENCY, CART_PRIMARY_CURRENCY);
+
+            if ($amount < $min || $amount > $max) {
+                fn_set_notification('W', __('wallet_error'), __('can_not_proceed_please_check_limit'));
+                fn_set_notification('W', __('warning'), __('wallet_limit_is') . fn_format_price_by_currency($min, CART_PRIMARY_CURRENCY, CART_SECONDARY_CURRENCY) . __('_to_') . fn_format_price_by_currency($max, CART_PRIMARY_CURRENCY, CART_SECONDARY_CURRENCY));
+                $this->response = array(CONTROLLER_STATUS_REDIRECT, "wallet_system.direct_recharge");
+                return;
+            }
+
+            if (empty($payment_id) || empty($payments)) {
+                fn_set_notification('W', __('warning'), __('no_payments_available'));
+                $this->response = array(CONTROLLER_STATUS_REDIRECT, "wallet_system.direct_recharge");
+                return;
+            }
+
+            if (!$paid_confirmed) {
+                fn_set_notification('W', __('warning'), 'Пожалуйста, подтвердите оплату чекбоксом.');
+                $this->response = array(CONTROLLER_STATUS_REDIRECT, "wallet_system.direct_recharge");
+                return;
+            }
+
+            $wallet_id = $this->loadModel->getUserWalletId($this->auth['user_id']);
+            $current_cash = $this->loadModel->getWalletCash(array('total_cash'), array('wallet_id' => $wallet_id), 'db_get_field');
+            $updated_cash = $current_cash + (float) $amount;
+
+            if ($updated_cash >= 100000000) {
+                fn_set_notification('W', __('warning'), __('you_are_using_max_ammount_in_your_wallet'));
+                $this->response = array(CONTROLLER_STATUS_REDIRECT, "wallet_system.direct_recharge");
+                return;
+            }
+
+            $this->loadModel->updateWalletCash(array('total_cash' => $updated_cash), array('wallet_id' => $wallet_id));
+
+            $payment_name = '';
+            foreach ($payments as $payment) {
+                if ((int) $payment['payment_id'] === $payment_id) {
+                    $payment_name = $payment['payment'];
+                    break;
+                }
+            }
+
+            if (fn_allowed_for('ULTIMATE')) {
+                $company_id = Registry::get('runtime.company_id');
+            } else {
+                $company_id = Registry::get('runtime.company_id');
+            }
+
+            $_data = array(
+                'source'        => 'direct_recharge',
+                'source_id'     => $payment_id,
+                'wallet_id'     => $wallet_id,
+                'credit_amount' => $amount,
+                'total_amount'  => $updated_cash,
+                'timestamp'     => TIME,
+                'refund_reason' => !empty($payment_name) ? __('wallet_recharge') . ' - ' . $payment_name : __('wallet_recharge'),
+                'company_id'    => $company_id,
+            );
+
+            $wallet_credit_log_id = $this->loadModel->insertWalletCreditLog($_data);
+            $tran_data = array(
+                'credit_id'  => $wallet_credit_log_id,
+                'wallet_id'  => $wallet_id,
+                'timestamp'  => TIME,
+                'company_id' => $company_id,
+            );
+
+            $this->loadModel->insertWalletTransaction($tran_data);
+            $this->loadModel->creditWalletNotification($wallet_credit_log_id);
+
+            fn_set_notification('N', __('wallet_recharge'), __('money_added_in_user_wallet', array(
+                '[text_amt]' => $amount,
+            )));
+
+            $this->response = array(CONTROLLER_STATUS_REDIRECT, "wallet_system.my_wallet");
+            return;
+        }
+
+        Registry::get('view')->assign('wallet_recharge', $wallet_recharge);
+        Registry::get('view')->assign('payments', $payments);
+        Registry::get('view')->assign('recharge_limits', array(
+            'min' => fn_format_price_by_currency($min, CART_PRIMARY_CURRENCY, CART_SECONDARY_CURRENCY),
+            'max' => fn_format_price_by_currency($max, CART_PRIMARY_CURRENCY, CART_SECONDARY_CURRENCY),
+        ));
+    }
+
     public function bank_transfer() {
         $wallet_setting = $this->helper->fnGetWalletSystemSettingDataForAll('');
         if(isset($wallet_setting) && isset($wallet_setting['status_bank_transfer']) && $wallet_setting['status_bank_transfer'] == 'Y'){
