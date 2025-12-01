@@ -1,0 +1,71 @@
+msgid ""
+msgstr "Project-Id-Version: wallet_system\nLanguage: en\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"
+
+msgid "Addon::name"
+msgstr "Wallet system"
+
+msgid "enable_wallet_transfers"
+msgstr "Enable wallet-to-wallet transfers"
+
+msgid "enable_bank_transfers"
+msgstr "Enable bank transfers"
+
+msgid "wallet_min_recharge"
+msgstr "Minimum recharge amount"
+
+msgid "wallet_max_recharge"
+msgstr "Maximum recharge amount"
+
+msgid "wallet_min_transfer"
+msgstr "Minimum transfer amount"
+
+msgid "wallet_max_transfer"
+msgstr "Maximum transfer amount"
+
+msgid "wallet_reward_points_commission"
+msgstr "Reward points commission"
+
+msgid "wallet_min_reward_points"
+msgstr "Minimum reward points"
+
+msgid "wallet_max_reward_points"
+msgstr "Maximum reward points"
+
+msgid "wallet_registration_bonus"
+msgstr "Registration bonus amount"
+
+msgid "wallet_enable_registration_bonus"
+msgstr "Credit bonus on registration"
+
+msgid "wallet_min_refund"
+msgstr "Minimum refund to wallet"
+
+msgid "wallet_max_refund"
+msgstr "Maximum refund to wallet"
+
+msgid "wallet_allow_bank_withdraw"
+msgstr "Allow withdrawals to bank"
+
+msgid "wallet_transfer_for_all_customers"
+msgstr "Allow transfers for all customers"
+
+msgid "wallet_transfer_for_all_customers_notice"
+msgstr "If unchecked, only listed customers may transfer"
+
+msgid "wallet_allowed_customers"
+msgstr "Allowed customers"
+
+msgid "enter_customer_ids_comma"
+msgstr "Enter customer IDs separated by comma"
+
+msgid "wallet_customer_ids_hint"
+msgstr "Leave empty to use group restrictions"
+
+msgid "wallet_min_bank_transfer"
+msgstr "Minimum bank transfer amount"
+
+msgid "wallet_max_bank_transfer"
+msgstr "Maximum bank transfer amount"
+
+msgid "wallet_payment_placeholder"
+msgstr "Configure this block to show wallet payment information"
